@@ -66,7 +66,24 @@ Lưu ý: tập SUB chỉ có 40 tin, 1 tin sai làm F1 đổi khoảng 2.5 đi�
 
 ## 6. Phương án cho sản phẩm thật
 
-*Với yêu cầu p95 < 50 ms/tin cho 10 triệu SMS/ngày: chọn phương án nào, dẫn số liệu nào, chấp nhận đánh đổi gì.*
+Phương án chọn: hệ thống lai (router). Dùng BoW + MLP làm tầng 1 cho mọi tin, và chỉ chuyển các tin lưỡng lự
+(0.3 ≤ p ≤ 0.7) sang LLM nhỏ với prompt phòng thủ.
+
+Số liệu dẫn:
+- BoW + MLP: F1 test 0.952, p95 2.39 ms, $0 mỗi 1k tin, nên đạt yêu cầu p95 < 50 ms và đủ nhanh
+  cho ~116 tin/giây (throughput đo được ~13.000 tin/giây).
+- Cả ba cách LLM có p95 từ 1383 đến 2271 ms, không đạt yêu cầu độ trễ, nhưng F1 SUB = 1.000
+  và đạt 98 đến 100% ở 50 case khó (BoW + MLP chỉ 60%).
+- Dùng LLM cho toàn bộ 10 triệu tin/ngày tốn khoảng $2.100/tháng (LLM nhỏ, $0.007/1k).
+  Nếu chỉ ~5% tin đi qua LLM thì khoảng $105/tháng.
+
+Đánh đổi chấp nhận:
+- Tin giọng tự nhiên hoặc không có từ khoá mà BoW + MLP tự tin sai thì không được chuyển cho LLM,
+  nên vẫn có một phần spam bị bỏ sót. Chấp nhận rủi ro này hoặc bổ sung tầng embedding/luật nhẹ.
+- p95 < 50 ms chỉ đúng khi tỉ lệ chuyển sang LLM dưới 5%, hoặc xử lý tin lưỡng lự bất đồng bộ
+  (giữ lại hoặc kiểm tra sau), vì LLM chậm ~1.4 đến 2.3 giây.
+- Hệ thống phức tạp hơn một mô hình đơn, phải theo dõi tỉ lệ tin lưỡng lự và chi phí LLM.
+- Số liệu dựa trên 40 tin (SUB) và 50 case viết tay nên chỉ là ước lượng.
 
 ## 7. AI log và điều đã học
 
@@ -77,3 +94,4 @@ Lưu ý: tập SUB chỉ có 40 tin, 1 tin sai làm F1 đổi khoảng 2.5 đi�
 | TODO 4.2, 4.3, 4.4 | Dán khung hàm `build_classification_prompt`, `parse_label`, `llm_classify_batch` | Viết code cho 3 hàm | Ô kiểm tra 4.2–4.3 và 4.1 + 4.4 đạt ✅. Lần đầu chạy 4.A cho F1 = 0.000 và invalid = 40; AI gọi thử API và xác nhận `max_completion_tokens=3` trả câu rỗng (chữ "spam" cần 4 token); nâng giới hạn token trong TODO 4.4 (không sửa ô của người ra đề) thì F1 = 1.000, invalid = 0 |
 | Khái niệm | F1, zero-shot/few-shot, đường Pareto và SLA, 50 case khó | Giải thích bằng ví dụ và đọc biểu đồ | Đối chiếu với kết quả thật trong notebook trước khi viết dự đoán và câu trả lời |
 | Báo cáo | Hoàn thành các mục của báo cáo | Điền mục 1–4, 6, 7 từ `lab1_report.json` và output notebook. Không làm mục 5 (thử thách cá nhân, đề ghi không dùng AI) | Đối chiếu số liệu với `lab1_report.json` |
+| Phản ánh cuối bài và mục 6 | Nhờ AI trả lời 2 câu phản ánh cuối bài (chọn phương án cho sản phẩm thật với p95 < 50 ms cho 10 triệu SMS/ngày; thiết kế hệ thống lai/router) và nêu phương án, số liệu, đánh đổi cho mục 6 | Soạn câu trả lời từ số liệu trong `lab1_report.json`: các cách đạt p95 < 50 ms, chi phí LLM khoảng $2.100/tháng (LLM nhỏ), thiết kế router BoW + MLP rồi chuyển tin lưỡng lự sang LLM nhỏ, ước tính khoảng $105/tháng nếu 5% tin đi qua LLM | Đối chiếu p95, F1, USD/1k tin với `lab1_report.json`. Tỉ lệ 5% tin lưỡng lự là giả định, chưa đo trên tập validation |
